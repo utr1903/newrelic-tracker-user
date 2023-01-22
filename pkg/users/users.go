@@ -148,19 +148,19 @@ func (u *Users) Run() error {
 	// Fetch the domain IDs per GraphQL
 	authDomainIds, err := u.fetchDomainIds()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Fetch the users per GraphQL
 	authDomainUsers, err := u.fetchUsers(authDomainIds)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Create & flush metrics
 	err = u.flushMetrics(authDomainUsers)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	// Flush logs

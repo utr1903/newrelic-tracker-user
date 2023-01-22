@@ -52,7 +52,7 @@ func (c *graphqlClientMockDomains) Execute(
 	result any,
 ) error {
 	if c.failRequest {
-		return errors.New("error")
+		return errors.New("error_fetch_domains")
 	}
 
 	qvParsed := parseQueryVariablesDomains(qv)
@@ -113,7 +113,111 @@ func (c *graphqlClientMockUsers) Execute(
 	result any,
 ) error {
 	if c.failRequest {
-		return errors.New("error")
+		return errors.New("error_fetch_users")
+	}
+
+	authDomainsMock := createAuthDomainUsersMock()
+	qvParsed := parseQueryVariablesUsers(qv)
+
+	var authDomainsResponse user.AuthenticationDomains
+	if qvParsed.Cursor == "null" && qvParsed.AuthDomainId == dom1 {
+		nextCursor := "notnull"
+		authDomainsResponse = user.AuthenticationDomains{
+			NextCursor: nil,
+			AuthenticationDomains: []user.AuthenticationDomain{
+				{
+					Id:   dom1,
+					Name: dom1,
+					Users: user.Users{
+						NextCursor: &nextCursor,
+						Users: []user.User{
+							{
+								Id:                     authDomainsMock[dom1][dom1user1].Id,
+								Name:                   authDomainsMock[dom1][dom1user1].Name,
+								UserType:               authDomainsMock[dom1][dom1user1].UserType,
+								Email:                  authDomainsMock[dom1][dom1user1].Email,
+								EmailVerificationState: authDomainsMock[dom1][dom1user1].EmailVerificationState,
+								LastActive:             authDomainsMock[dom1][dom1user1].LastActive,
+								TimeZone:               authDomainsMock[dom1][dom1user1].TimeZone,
+							},
+						},
+					},
+				},
+			},
+		}
+	} else if qvParsed.Cursor == "notnull" && qvParsed.AuthDomainId == dom1 {
+		authDomainsResponse = user.AuthenticationDomains{
+			NextCursor: nil,
+			AuthenticationDomains: []user.AuthenticationDomain{
+				{
+					Id:   dom1,
+					Name: dom1,
+					Users: user.Users{
+						NextCursor: nil,
+						Users: []user.User{
+							{
+								Id:                     authDomainsMock[dom1][dom1user2].Id,
+								Name:                   authDomainsMock[dom1][dom1user2].Name,
+								UserType:               authDomainsMock[dom1][dom1user2].UserType,
+								Email:                  authDomainsMock[dom1][dom1user2].Email,
+								EmailVerificationState: authDomainsMock[dom1][dom1user2].EmailVerificationState,
+								LastActive:             authDomainsMock[dom1][dom1user2].LastActive,
+								TimeZone:               authDomainsMock[dom1][dom1user2].TimeZone,
+							},
+						},
+					},
+				},
+			},
+		}
+	} else if qvParsed.Cursor == "null" && qvParsed.AuthDomainId == dom2 {
+		nextCursor := "notnull"
+		authDomainsResponse = user.AuthenticationDomains{
+			NextCursor: nil,
+			AuthenticationDomains: []user.AuthenticationDomain{
+				{
+					Id:   dom1,
+					Name: dom1,
+					Users: user.Users{
+						NextCursor: &nextCursor,
+						Users: []user.User{
+							{
+								Id:                     authDomainsMock[dom2][dom2user1].Id,
+								Name:                   authDomainsMock[dom2][dom2user1].Name,
+								UserType:               authDomainsMock[dom2][dom2user1].UserType,
+								Email:                  authDomainsMock[dom2][dom2user1].Email,
+								EmailVerificationState: authDomainsMock[dom2][dom2user1].EmailVerificationState,
+								LastActive:             authDomainsMock[dom2][dom2user1].LastActive,
+								TimeZone:               authDomainsMock[dom2][dom2user1].TimeZone,
+							},
+						},
+					},
+				},
+			},
+		}
+	} else if qvParsed.Cursor == "notnull" && qvParsed.AuthDomainId == dom2 {
+		authDomainsResponse = user.AuthenticationDomains{
+			NextCursor: nil,
+			AuthenticationDomains: []user.AuthenticationDomain{
+				{
+					Id:   dom1,
+					Name: dom1,
+					Users: user.Users{
+						NextCursor: nil,
+						Users: []user.User{
+							{
+								Id:                     authDomainsMock[dom2][dom2user2].Id,
+								Name:                   authDomainsMock[dom2][dom2user2].Name,
+								UserType:               authDomainsMock[dom2][dom2user2].UserType,
+								Email:                  authDomainsMock[dom2][dom2user2].Email,
+								EmailVerificationState: authDomainsMock[dom2][dom2user2].EmailVerificationState,
+								LastActive:             authDomainsMock[dom2][dom2user2].LastActive,
+								TimeZone:               authDomainsMock[dom2][dom2user2].TimeZone,
+							},
+						},
+					},
+				},
+			},
+		}
 	}
 
 	res := user.GraphQlUserResponse{
@@ -121,7 +225,7 @@ func (c *graphqlClientMockUsers) Execute(
 			Actor: user.Actor{
 				Organization: user.Organization{
 					UserManagement: user.UserManagement{
-						AuthenticationDomains: user.AuthenticationDomains{},
+						AuthenticationDomains: authDomainsResponse,
 					},
 				},
 			},
@@ -184,7 +288,8 @@ func Test_FetchingDomainsFails(t *testing.T) {
 
 	err := us.Run()
 
-	assert.Nil(t, err)
+	assert.NotNil(t, err)
+	assert.Equal(t, "error_fetch_domains", err.Error())
 }
 
 func Test_FetchingDomainsSucceeds(t *testing.T) {
@@ -207,16 +312,44 @@ func Test_FetchingDomainsSucceeds(t *testing.T) {
 		MetricForwarder: mf,
 	}
 
-	_, err := us.fetchDomainIds()
+	authDomainIds, err := us.fetchDomainIds()
 
 	assert.Nil(t, err)
+	assert.Equal(t, dom1, authDomainIds[0])
+	assert.Equal(t, dom2, authDomainIds[1])
+}
+
+func Test_FetchingUsersFails(t *testing.T) {
+	logger := newLoggerMock()
+	gqlcDomains := &graphqlClientMockDomains{
+		failRequest: false,
+	}
+	gqlcUsers := &graphqlClientMockUsers{
+		failRequest: true,
+	}
+	mf := &metricForwarderMock{
+		returnError: true,
+	}
+
+	us := &Users{
+		OrganizationId:  "organizationId",
+		Logger:          logger,
+		GqlcDomains:     gqlcDomains,
+		GqlcUsers:       gqlcUsers,
+		MetricForwarder: mf,
+	}
+
+	err := us.Run()
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "error_fetch_users", err.Error())
 }
 
 func createAuthDomainUsersMock() map[string](map[string]user.User) {
 
 	return map[string](map[string]user.User){
 		dom1: map[string]user.User{
-			dom1user1: user.User{
+			dom1user1: {
 				Id:   dom1user1,
 				Name: dom1user1,
 				UserType: user.UserType{
@@ -227,7 +360,7 @@ func createAuthDomainUsersMock() map[string](map[string]user.User) {
 				LastActive:             "2022-10-11T10:10:05Z",
 				TimeZone:               "Etc/UTC",
 			},
-			dom1user2: user.User{
+			dom1user2: {
 				Id:   dom1user2,
 				Name: dom1user2,
 				UserType: user.UserType{
@@ -240,7 +373,7 @@ func createAuthDomainUsersMock() map[string](map[string]user.User) {
 			},
 		},
 		dom2: map[string]user.User{
-			dom2user1: user.User{
+			dom2user1: {
 				Id:   dom2user1,
 				Name: dom2user1,
 				UserType: user.UserType{
@@ -251,7 +384,7 @@ func createAuthDomainUsersMock() map[string](map[string]user.User) {
 				LastActive:             "2022-10-11T10:10:05Z",
 				TimeZone:               "Etc/UTC",
 			},
-			dom2user2: user.User{
+			dom2user2: {
 				Id:   dom2user2,
 				Name: dom2user2,
 				UserType: user.UserType{
