@@ -202,7 +202,7 @@ func (u *Users) fetchDomainIds() (
 		}
 
 		// Continue to fetch domains until cursor is null
-		cursor := authDomain.NextCursor
+		cursor = authDomain.NextCursor
 		if cursor == nil {
 			break
 		}
@@ -259,7 +259,7 @@ func (u *Users) fetchUsers(
 			}
 
 			// Continue to fetch users until cursor is null
-			cursorUser := authDomain.Users.NextCursor
+			cursorUser = authDomain.Users.NextCursor
 			if cursorUser == nil {
 				break
 			}
