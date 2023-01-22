@@ -2,52 +2,52 @@ package user
 
 // --- GraphQL for user query --- //
 type GraphQlUserResponse struct {
-	Data   data        `json:"data"`
+	Data   Data        `json:"data"`
 	Errors interface{} `json:"errors"`
 }
 
-type data struct {
-	Actor actor `json:"actor"`
+type Data struct {
+	Actor Actor `json:"actor"`
 }
 
-type actor struct {
-	Organization organization `json:"organization"`
+type Actor struct {
+	Organization Organization `json:"organization"`
 }
 
-type organization struct {
-	UserManagement userManagement `json:"userManagement"`
+type Organization struct {
+	UserManagement UserManagement `json:"userManagement"`
 }
 
-type userManagement struct {
-	AuthenticationDomains authenticationDomains `json:"authenticationDomains"`
+type UserManagement struct {
+	AuthenticationDomains AuthenticationDomains `json:"authenticationDomains"`
 }
 
-type authenticationDomains struct {
+type AuthenticationDomains struct {
 	NextCursor            *string                `json:"nextCursor"`
-	AuthenticationDomains []authenticationDomain `json:"authenticationDomains"`
+	AuthenticationDomains []AuthenticationDomain `json:"authenticationDomains"`
 }
 
-type authenticationDomain struct {
+type AuthenticationDomain struct {
 	Id    string `json:"id"`
 	Name  string `json:"name"`
-	Users users  `json:"users"`
+	Users Users  `json:"users"`
 }
 
-type users struct {
+type Users struct {
 	NextCursor *string `json:"nextCursor"`
-	Users      []user  `json:"users"`
+	Users      []User  `json:"users"`
 }
 
-type user struct {
+type User struct {
 	Id                     string   `json:"id"`
 	Name                   string   `json:"name"`
-	UserType               userType `json:"type"`
+	UserType               UserType `json:"type"`
 	Email                  string   `json:"email"`
 	EmailVerificationState string   `json:"emailVerificationState"`
 	LastActive             string   `json:"lastActive"`
 	TimeZone               string   `json:"timeZone"`
 }
 
-type userType struct {
+type UserType struct {
 	Id string `json:"id"`
 }
