@@ -51,3 +51,7 @@ type User struct {
 type UserType struct {
 	Id string `json:"id"`
 }
+
+func (r *GraphQlUserResponse) GetAuthDomains() AuthenticationDomains {
+	return r.Data.Actor.Organization.UserManagement.AuthenticationDomains
+}
