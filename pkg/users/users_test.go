@@ -261,7 +261,7 @@ func (mf *metricForwarderMock) AddMetric(
 func (mf *metricForwarderMock) Run() error {
 
 	if mf.returnError {
-		return errors.New("error")
+		return errors.New("error_flush_metrics")
 	}
 	return nil
 }
@@ -385,6 +385,57 @@ func Test_FetchingUsersSucceeds(t *testing.T) {
 	// dom2user2
 	assert.Equal(t, dom2, authDomainUsers[3].AuthDomainId)
 	assert.Equal(t, dom2user2, authDomainUsers[3].Id)
+}
+
+func Test_FlushingFails(t *testing.T) {
+	logger := newLoggerMock()
+	gqlcDomains := &graphqlClientMockDomains{
+		failRequest: false,
+	}
+	gqlcUsers := &graphqlClientMockUsers{
+		failRequest: false,
+	}
+	mf := &metricForwarderMock{
+		returnError: true,
+	}
+
+	us := &Users{
+		OrganizationId:  "organizationId",
+		Logger:          logger,
+		GqlcDomains:     gqlcDomains,
+		GqlcUsers:       gqlcUsers,
+		MetricForwarder: mf,
+	}
+
+	err := us.Run()
+
+	assert.NotNil(t, err)
+	assert.Equal(t, "error_flush_metrics", err.Error())
+}
+
+func Test_FlushingSucceeds(t *testing.T) {
+	logger := newLoggerMock()
+	gqlcDomains := &graphqlClientMockDomains{
+		failRequest: false,
+	}
+	gqlcUsers := &graphqlClientMockUsers{
+		failRequest: false,
+	}
+	mf := &metricForwarderMock{
+		returnError: false,
+	}
+
+	us := &Users{
+		OrganizationId:  "organizationId",
+		Logger:          logger,
+		GqlcDomains:     gqlcDomains,
+		GqlcUsers:       gqlcUsers,
+		MetricForwarder: mf,
+	}
+
+	err := us.Run()
+
+	assert.Nil(t, err)
 }
 
 func createAuthDomainUsersMock() map[string](map[string]user.User) {
