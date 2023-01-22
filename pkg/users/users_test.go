@@ -175,8 +175,8 @@ func (c *graphqlClientMockUsers) Execute(
 			NextCursor: nil,
 			AuthenticationDomains: []user.AuthenticationDomain{
 				{
-					Id:   dom1,
-					Name: dom1,
+					Id:   dom2,
+					Name: dom2,
 					Users: user.Users{
 						NextCursor: &nextCursor,
 						Users: []user.User{
@@ -199,8 +199,8 @@ func (c *graphqlClientMockUsers) Execute(
 			NextCursor: nil,
 			AuthenticationDomains: []user.AuthenticationDomain{
 				{
-					Id:   dom1,
-					Name: dom1,
+					Id:   dom2,
+					Name: dom2,
 					Users: user.Users{
 						NextCursor: nil,
 						Users: []user.User{
@@ -343,6 +343,48 @@ func Test_FetchingUsersFails(t *testing.T) {
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "error_fetch_users", err.Error())
+}
+
+func Test_FetchingUsersSucceeds(t *testing.T) {
+	logger := newLoggerMock()
+	gqlcDomains := &graphqlClientMockDomains{
+		failRequest: false,
+	}
+	gqlcUsers := &graphqlClientMockUsers{
+		failRequest: false,
+	}
+	mf := &metricForwarderMock{
+		returnError: true,
+	}
+
+	us := &Users{
+		OrganizationId:  "organizationId",
+		Logger:          logger,
+		GqlcDomains:     gqlcDomains,
+		GqlcUsers:       gqlcUsers,
+		MetricForwarder: mf,
+	}
+
+	authDomainIds, _ := us.fetchDomainIds()
+	authDomainUsers, err := us.fetchUsers(authDomainIds)
+
+	assert.Nil(t, err)
+
+	// dom1user1
+	assert.Equal(t, dom1, authDomainUsers[0].AuthDomainId)
+	assert.Equal(t, dom1user1, authDomainUsers[0].Id)
+
+	// dom1user2
+	assert.Equal(t, dom1, authDomainUsers[1].AuthDomainId)
+	assert.Equal(t, dom1user2, authDomainUsers[1].Id)
+
+	// dom2user1
+	assert.Equal(t, dom2, authDomainUsers[2].AuthDomainId)
+	assert.Equal(t, dom2user1, authDomainUsers[2].Id)
+
+	// dom2user2
+	assert.Equal(t, dom2, authDomainUsers[3].AuthDomainId)
+	assert.Equal(t, dom2user2, authDomainUsers[3].Id)
 }
 
 func createAuthDomainUsersMock() map[string](map[string]user.User) {
